@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 contract vesting {
-    uint256 val=86400;
     using Counters for Counters.Counter;
     Counters.Counter private lockId;
     constructor(){
@@ -41,12 +40,20 @@ contract vesting {
         lockId.increment();
     }
     function calculate(uint256 _id) private returns(uint256) {
-        
+        uint256 tokensToTransfer;
         uint256 vestingTime= Information[_id].lockingEndTime - Information[_id].lockingStartTime;
         uint256 unlockPerSecond= Information[_id].amount/vestingTime;
-        uint256 tokensToTransfer= (block.timestamp- Information[_id].previousUnlockTime)*unlockPerSecond;
+        if (block.timestamp<=Information[_id].lockingEndTime){
+        tokensToTransfer= (block.timestamp- Information[_id].previousUnlockTime)*unlockPerSecond;
         Information[_id].previousUnlockTime=block.timestamp;
         Information[_id].alreadyTransferred+=tokensToTransfer;
+        }
+        else{
+           tokensToTransfer= (Information[_id].lockingEndTime- Information[_id].previousUnlockTime)*unlockPerSecond; 
+            Information[_id].previousUnlockTime=block.timestamp;
+            Information[_id].alreadyTransferred+=tokensToTransfer;
+
+        }
         return tokensToTransfer;
     }
     
